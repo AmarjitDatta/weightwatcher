@@ -15,12 +15,17 @@ class WeightInput(BaseModel):
 
 
 class WeightRecord(BaseModel):
+    weightId: int
     weight: float
     userId: int
     timestamp: datetime
     
     class Config:
         from_attributes = True
+
+
+class WeightUpdate(BaseModel):
+    weight: float
 
 
 # API Endpoints
@@ -36,13 +41,37 @@ async def get_weights(userId: Optional[int] = None, db: Session = Depends(get_db
 
 @app.post("/weights", response_model=WeightRecord)
 async def add_weight(data: WeightInput, db: Session = Depends(get_db)):
-    """Add a new weight record to the database with auto-generated timestamp"""
+    """Add a new weight record to the database with auto-generated timestamp and weightId"""
+    # Get the max weightId for this user and increment
+    max_weight = db.query(WeightDB).filter(WeightDB.userId == data.userId).order_by(WeightDB.weightId.desc()).first()
+    next_weight_id = 1 if max_weight is None else max_weight.weightId + 1
+    
     weight_record = WeightDB(
+        weightId=next_weight_id,
         weight=data.weight,
         userId=data.userId,
         timestamp=datetime.now()
     )
     db.add(weight_record)
+    db.commit()
+    db.refresh(weight_record)
+    return weight_record
+
+
+@app.put("/weights", response_model=WeightRecord)
+async def update_weight(userId: int, weightId: int, data: WeightUpdate, db: Session = Depends(get_db)):
+    """Update an existing weight record by userId and weightId"""
+    weight_record = db.query(WeightDB).filter(
+        WeightDB.userId == userId,
+        WeightDB.weightId == weightId
+    ).first()
+    
+    if not weight_record:
+        raise HTTPException(status_code=404, detail="Weight record not found")
+    
+    weight_record.weight = data.weight
+    weight_record.timestamp = datetime.now()
+    
     db.commit()
     db.refresh(weight_record)
     return weight_record

@@ -17,6 +17,7 @@ class WeightDB(Base):
     __tablename__ = "weights"
     
     id = Column(Integer, primary_key=True, index=True)
+    weightId = Column(Integer, index=True)
     userId = Column(Integer, index=True)
     weight = Column(Float)
     timestamp = Column(DateTime, default=datetime.now)

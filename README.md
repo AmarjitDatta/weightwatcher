@@ -103,11 +103,13 @@ GET http://localhost:8000/weights?userId=123
 ```json
 [
   {
+    "weightId": 1,
     "weight": 150.5,
     "userId": 123,
     "timestamp": "2026-02-18T10:30:45.123456"
   },
   {
+    "weightId": 2,
     "weight": 149.2,
     "userId": 123,
     "timestamp": "2026-02-18T11:15:22.654321"
@@ -124,7 +126,7 @@ GET http://localhost:8000/weights?userId=123
 Status Code: 400
 
 ### POST /weights
-Add a new weight record to the PostgreSQL database. The timestamp is automatically generated.
+Add a new weight record to the PostgreSQL database. The timestamp and weightId are automatically generated per user.
 
 **Request Body:**
 ```json
@@ -137,11 +139,49 @@ Add a new weight record to the PostgreSQL database. The timestamp is automatical
 **Response:**
 ```json
 {
+  "weightId": 1,
   "weight": 150.5,
   "userId": 123,
   "timestamp": "2026-02-18T10:30:45.123456"
 }
 ```
+
+### PUT /weights
+Update an existing weight record by userId and weightId. The timestamp is automatically updated.
+
+**Query Parameters:**
+- `userId` (required): Integer - User ID
+- `weightId` (required): Integer - Weight ID for the user
+
+**Request Body:**
+```json
+{
+  "weight": 145.0
+}
+```
+
+**Example Request:**
+```
+PUT http://localhost:8000/weights?userId=123&weightId=1
+```
+
+**Response:**
+```json
+{
+  "weightId": 1,
+  "weight": 145.0,
+  "userId": 123,
+  "timestamp": "2026-02-18T12:00:00.000000"
+}
+```
+
+**Error Response (record not found):**
+```json
+{
+  "detail": "Weight record not found"
+}
+```
+Status Code: 404
 
 ## Architecture
 
@@ -153,9 +193,12 @@ Add a new weight record to the PostgreSQL database. The timestamp is automatical
 
 **Table: weights**
 - `id`: Primary key (auto-increment)
+- `weightId`: Integer (auto-generated per user, indexed)
 - `userId`: Integer (indexed)
 - `weight`: Float (weight in LB)
 - `timestamp`: DateTime (auto-generated)
+
+**Note**: Each user has their own sequence of weightIds starting from 1. For example, User 123 might have weightIds 1, 2, 3, while User 456 also has weightIds 1, 2, 3.
 
 ## Interactive API Documentation
 
