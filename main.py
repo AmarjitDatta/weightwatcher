@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import WeightDB, get_db
 
@@ -25,9 +25,12 @@ class WeightRecord(BaseModel):
 
 # API Endpoints
 @app.get("/weights", response_model=List[WeightRecord])
-async def get_weights(db: Session = Depends(get_db)):
-    """Get all weight records from the database"""
-    weights = db.query(WeightDB).all()
+async def get_weights(userId: Optional[int] = None, db: Session = Depends(get_db)):
+    """Get weight records for a specific user"""
+    if userId is None:
+        raise HTTPException(status_code=400, detail="Bad Request: userId is required")
+    
+    weights = db.query(WeightDB).filter(WeightDB.userId == userId).all()
     return weights
 
 

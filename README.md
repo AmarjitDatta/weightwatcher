@@ -89,7 +89,15 @@ The API will be available at `http://localhost:8000`
 ## API Endpoints
 
 ### GET /weights
-Get all weight records from the PostgreSQL database.
+Get weight records for a specific user from the PostgreSQL database.
+
+**Query Parameters:**
+- `userId` (required): Integer - User ID to filter records
+
+**Example Request:**
+```
+GET http://localhost:8000/weights?userId=123
+```
 
 **Response:**
 ```json
@@ -106,6 +114,14 @@ Get all weight records from the PostgreSQL database.
   }
 ]
 ```
+
+**Error Response (missing userId):**
+```json
+{
+  "detail": "Bad Request: userId is required"
+}
+```
+Status Code: 400
 
 ### POST /weights
 Add a new weight record to the PostgreSQL database. The timestamp is automatically generated.
