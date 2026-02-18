@@ -151,6 +151,35 @@ PUT http://localhost:8000/weights?userId=123&weightId=1
 ```
 Status Code: 404
 
+### DELETE /weights
+Delete a weight record by userId and weightId.
+
+**Query Parameters:**
+- `userId` (required): Integer - User ID
+- `weightId` (required): Integer - Weight ID for the user
+
+**Example Request:**
+```
+DELETE http://localhost:8000/weights?userId=123&weightId=1
+```
+
+**Response:**
+```json
+{
+  "message": "Weight record deleted successfully",
+  "userId": 123,
+  "weightId": 1
+}
+```
+
+**Error Response (record not found):**
+```json
+{
+  "detail": "Weight record not found"
+}
+```
+Status Code: 404
+
 ## Architecture
 
 - **App Container**: FastAPI application running on port 8000

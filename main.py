@@ -75,3 +75,20 @@ async def update_weight(userId: int, weightId: int, data: WeightUpdate, db: Sess
     db.commit()
     db.refresh(weight_record)
     return weight_record
+
+
+@app.delete("/weights")
+async def delete_weight(userId: int, weightId: int, db: Session = Depends(get_db)):
+    """Delete a weight record by userId and weightId"""
+    weight_record = db.query(WeightDB).filter(
+        WeightDB.userId == userId,
+        WeightDB.weightId == weightId
+    ).first()
+    
+    if not weight_record:
+        raise HTTPException(status_code=404, detail="Weight record not found")
+    
+    db.delete(weight_record)
+    db.commit()
+    
+    return {"message": "Weight record deleted successfully", "userId": userId, "weightId": weightId}
