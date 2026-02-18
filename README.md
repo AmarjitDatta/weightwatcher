@@ -32,13 +32,13 @@ This application follows a **microservices architecture** with the following com
 ## Components
 
 - **[Weight API](weight-api/)** - REST API for weight tracking (CRUD operations)
-- **[User API](user-api/)** - REST API for user management with password encryption
-- **Frontend** - React UI for managing weight records
+- **[User API](user-api/)** - REST API for user management and authentication
+- **[Frontend](frontend/)** - React SPA with authentication and weight tracking UI
 - **Database** - PostgreSQL 15 (shared by both APIs)
 
 ## Tech Stack
 
-- **Frontend**: React 18, Axios, CSS3, Nginx
+- **Frontend**: React 18, React Router, Axios, CSS3, Nginx
 - **Backend**: FastAPI, SQLAlchemy, Pydantic
 - **Database**: PostgreSQL 15
 - **Security**: Passlib with Bcrypt (password hashing)
@@ -46,14 +46,16 @@ This application follows a **microservices architecture** with the following com
 
 ## Features
 
+- ✅ **User Authentication** - Secure login/register system with encrypted passwords
 - ✅ **Microservices Architecture** - Independent, scalable services
-- ✅ **Weight Tracking** - Full CRUD operations for weight records
-- ✅ **User Management** - Secure user creation with encrypted passwords
-- ✅ **React UI** - Intuitive frontend interface
+- ✅ **Weight Tracking** - Full CRUD operations for weight records per user
+- ✅ **User Management** - Auto-generated user IDs with bcrypt password hashing
+- ✅ **React UI** - Modern single-page application with routing
+- ✅ **Session Persistence** - Users stay logged in via localStorage
 - ✅ **Data Persistence** - PostgreSQL database with proper schema
 - ✅ **Dockerized** - All services run in containers
 - ✅ **API Documentation** - Auto-generated Swagger/ReDoc documentation
-- ✅ **Per-User Weight IDs** - Each user has their own weight sequence
+- ✅ **Protected Routes** - Weight tracker accessible only after login
 
 ## Quick Start
 
@@ -114,6 +116,27 @@ Each microservice has its own detailed documentation:
 - **[Weight API Documentation](weight-api/README.md)** - Weight tracking endpoints, database schema, testing
 - **[User API Documentation](user-api/README.md)** - User management endpoints, security, authentication
 
+## User Flow
+
+1. **Register** - New users create an account with full name, email, and password
+   - userId is auto-generated (starts at 1000)
+   - Password is encrypted with bcrypt before storage
+   - Success message shown, then redirected to login
+
+2. **Login** - Users authenticate with email and password
+   - Credentials verified against database
+   - User info stored in browser localStorage
+   - Automatically redirected to weight tracker
+
+3. **Weight Tracker** - Logged-in users can:
+   - View all their weight entries in a table
+   - Add new weight entries
+   - Edit existing entries inline
+   - Delete entries with confirmation
+   - All operations use the logged-in userId automatically
+
+4. **Logout** - Clears session and returns to login page
+
 ## API Overview
 
 ### Weight Tracking API (Port 8000)
@@ -128,8 +151,9 @@ Manages weight records with full CRUD operations:
 
 ### User Management API (Port 8001)
 
-Handles user accounts with secure password encryption:
-- `POST /users` - Create new user with encrypted password
+Handles user registration and authentication:
+- `POST /users` - Register new user (auto-generates userId)
+- `POST /login` - Authenticate user with email/password
 - `GET /users/{user_id}` - Get user by ID
 - `GET /users` - Get all users
 
@@ -170,9 +194,10 @@ cd frontend
 npm install
 ```
 
-3. Set the API URL (optional - defaults to localhost:8000):
+3. Set the API URLs (optional - defaults shown):
 ```bash
 export REACT_APP_API_URL=http://localhost:8000
+export REACT_APP_USER_API_URL=http://localhost:8001
 ```
 
 4. Start the development server:
@@ -184,15 +209,21 @@ The frontend will be available at `http://localhost:3000`
 
 ## Frontend UI
 
-The React frontend provides an intuitive interface to interact with the API:
+The React frontend is a modern single-page application with authentication:
+
+**Pages:**
+- **Login Page** (`/login`) - Email and password authentication
+- **Register Page** (`/register`) - New user registration with validation
+- **Weight Tracker** (`/tracker`) - Protected route for logged-in users only
 
 **Features:**
-- **View Records**: Enter a User ID to load and display all weight records in a table
-- **Add Weight**: Form to add new weight entries for any user
-- **Update Weight**: Form to update existing weight records by userId and weightId
-- **Delete Record**: Select a row from the table and delete it with confirmation
-
-The frontend automatically communicates with the backend API and provides real-time feedback for all operations.
+- **Authentication Flow** - Complete login/register system with session management
+- **Protected Routes** - Automatic redirect to login if not authenticated
+- **Session Persistence** - Users stay logged in across browser sessions
+- **User-Specific Data** - Each user only sees their own weight entries
+- **Inline Editing** - Edit weight entries directly in the table
+- **Real-time Feedback** - Success and error messages for all operations
+- **Responsive Design** - Works on desktop and mobile devices
 
 ## Database Schema
 

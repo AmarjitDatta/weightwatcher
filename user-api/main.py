@@ -23,7 +23,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Pydantic models
 class UserCreate(BaseModel):
-    userId: int
+    userId: Optional[int] = None
     fullName: str
     email: EmailStr
     password: str
@@ -42,9 +42,23 @@ class UserCreateResponse(BaseModel):
     userId: int
 
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    userId: int
+    fullName: str
+
+
 # Helper functions
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 # API Endpoints
@@ -57,6 +71,12 @@ async def health_check():
 @app.post("/users", response_model=UserCreateResponse, status_code=201)
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     """Create a new user with encrypted password"""
+    # Auto-generate userId if not provided
+    if user.userId is None:
+        # Get the maximum userId and add 1
+        max_user = db.query(UserDB).order_by(UserDB.userId.desc()).first()
+        user.userId = (max_user.userId + 1) if max_user else 1000
+    
     # Check if userId already exists
     existing_user_id = db.query(UserDB).filter(UserDB.userId == user.userId).first()
     if existing_user_id:
@@ -81,6 +101,22 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     return {"userId": new_user.userId}
+
+
+@app.post("/login", response_model=LoginResponse)
+async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    """Login with email and password"""
+    # Find user by email
+    user = db.query(UserDB).filter(UserDB.email == credentials.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Verify password
+    if not verify_password(credentials.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    return {"userId": user.userId, "fullName": user.fullName}
 
 
 @app.get("/users/{user_id}", response_model=UserResponse)

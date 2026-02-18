@@ -1,10 +1,10 @@
 # User Management API
 
-FastAPI REST API service for user management and authentication. Part of the Weight Tracker Application microservices architecture.
+FastAPI REST API service for user registration, authentication, and management. Part of the Weight Tracker Application microservices architecture.
 
 ## Overview
 
-This service provides endpoints to manage user accounts with secure password encryption. It uses PostgreSQL for data persistence and bcrypt for password hashing.
+This service provides endpoints to register users, authenticate login credentials, and manage user accounts with secure password encryption. It uses PostgreSQL for data persistence and bcrypt for password hashing.
 
 ## Tech Stack
 
@@ -13,18 +13,18 @@ This service provides endpoints to manage user accounts with secure password enc
 - **Database**: PostgreSQL 15 (shared with Weight API)
 - **Validation**: Pydantic with EmailStr
 - **Password Hashing**: Passlib with bcrypt
+- **Authentication**: Email/password based
 - **Server**: Uvicorn
 
 ## API Endpoints
 
 ### POST /users
 
-Create a new user with encrypted password.
+Register a new user with encrypted password. The userId is automatically generated.
 
 **Request Body:**
 ```json
 {
-  "userId": 123,
   "fullName": "John Doe",
   "email": "john@example.com",
   "password": "securepassword123"
@@ -36,7 +36,6 @@ Create a new user with encrypted password.
 curl -X POST http://localhost:8001/users \
   -H "Content-Type: application/json" \
   -d '{
-    "userId": 123,
     "fullName": "John Doe",
     "email": "john@example.com",
     "password": "securepassword123"
@@ -46,28 +45,22 @@ curl -X POST http://localhost:8001/users \
 **Response (201 Created):**
 ```json
 {
-  "userId": 123
+  "userId": 1000
 }
 ```
 
 **Notes:**
+- **userId is auto-generated** starting from 1000
 - Password is hashed using bcrypt before storage
 - Response returns only the userId on successful creation
-- Email must be in valid email format
+- Email must be in valid email format and unique
 
 **Error Responses:**
 
-**400 Bad Request** - User ID already exists:
+**400 Bad Request** - Email already registered:
 ```json
 {
-  "detail": "User ID already exists"
-}
-```
-
-**400 Bad Request** - Email already exists:
-```json
-{
-  "detail": "Email already exists"
+  "detail": "Email already registered"
 }
 ```
 
@@ -82,6 +75,50 @@ curl -X POST http://localhost:8001/users \
       "input": "invalid-email"
     }
   ]
+}
+```
+
+---
+
+### POST /login
+
+Authenticate a user with email and password.
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "securepassword123"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8001/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "userId": 1000,
+  "fullName": "John Doe"
+}
+```
+
+**Notes:**
+- Password is verified against the hashed password in database
+- Returns userId and fullName on successful authentication
+- Use the returned userId for subsequent weight tracking operations
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "detail": "Invalid email or password"
 }
 ```
 
@@ -258,7 +295,9 @@ This service is part of a microservices architecture:
 
 The API returns appropriate HTTP status codes:
 - `200 OK`: Successful operation
-- `400 Bad Request`: Duplicate userId or email
+- `201 Created`: User successfully registered
+- `400 Bad Request`: Duplicate email
+- `401 Unauthorized`: Invalid login credentials
 - `404 Not Found`: User not found
 - `422 Unprocessable Entity`: Validation errors (invalid email, missing fields, etc.)
 
@@ -266,16 +305,24 @@ The API returns appropriate HTTP status codes:
 
 Using Pydantic models for request validation:
 
-**UserCreate:**
-- `userId`: Integer (required)
+**UserCreate (Registration):**
+- `userId`: Optional[Integer] (auto-generated if not provided)
 - `fullName`: String (required)
-- `email`: EmailStr (required, validated format)
+- `email`: EmailStr (required, validated format, must be unique)
+- `password`: String (required)
+
+**LoginRequest:**
+- `email`: EmailStr (required)
 - `password`: String (required)
 
 **UserResponse:**
 - `userId`: Integer
 - `fullName`: String
 - `email`: EmailStr
+
+**LoginResponse:**
+- `userId`: Integer
+- `fullName`: String
 
 Passwords are excluded from response models for security.
 
@@ -284,48 +331,62 @@ Passwords are excluded from response models for security.
 Example test sequence:
 
 ```bash
-# Create a new user
+# 1. Register a new user (userId auto-generated)
 curl -X POST http://localhost:8001/users \
   -H "Content-Type: application/json" \
   -d '{
-    "userId": 123,
     "fullName": "John Doe",
     "email": "john@example.com",
     "password": "SecurePass123"
   }'
+# Response: {"userId": 1000}
 
-# Get user by ID
-curl http://localhost:8001/users/123
+# 2. Login with email and password
+curl -X POST http://localhost:8001/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "SecurePass123"
+  }'
+# Response: {"userId": 1000, "fullName": "John Doe"}
 
-# Get all users
+# 3. Get user by ID
+curl http://localhost:8001/users/1000
+
+# 4. Get all users
 curl http://localhost:8001/users
 
-# Test duplicate userId (should fail)
+# 5. Test duplicate email (should fail)
 curl -X POST http://localhost:8001/users \
   -H "Content-Type: application/json" \
   -d '{
-    "userId": 123,
-    "fullName": "Another User",
-    "email": "another@example.com",
-    "password": "password"
-  }'
-
-# Test duplicate email (should fail)
-curl -X POST http://localhost:8001/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": 456,
     "fullName": "Another User",
     "email": "john@example.com",
     "password": "password"
   }'
+# Response: {"detail": "Email already registered"}
+
+# 6. Test invalid login (should fail)
+curl -X POST http://localhost:8001/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "WrongPassword"
+  }'
+# Response: {"detail": "Invalid email or password"}
+```
 ```
 
 ## Troubleshooting
 
-**User ID or email already exists:**
+**Email already registered:**
 - Check existing users: `curl http://localhost:8001/users`
-- Use unique userId and email for each user
+- Each email must be unique in the system
+
+**Login fails with valid credentials:**
+- Verify email is correct (case-sensitive)
+- Ensure password was not changed
+- Check user exists: `curl http://localhost:8001/users`
 
 **Invalid email format:**
 - Ensure email follows standard format (e.g., `user@domain.com`)

@@ -6,6 +6,8 @@ FastAPI REST API service for weight tracking with full CRUD operations. Part of 
 
 This service provides endpoints to manage weight records for users. It uses PostgreSQL for data persistence and supports operations like adding, retrieving, updating, and deleting weight records.
 
+**Note**: This service handles weight data operations only. User authentication is managed by the [User API](../user-api/README.md). In a typical workflow, users authenticate through the User API, and their `userId` is then used to interact with this service.
+
 ## Tech Stack
 
 - **Framework**: FastAPI
