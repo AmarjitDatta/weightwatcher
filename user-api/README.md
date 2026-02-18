@@ -43,18 +43,16 @@ curl -X POST http://localhost:8001/users \
   }'
 ```
 
-**Response (200 OK):**
+**Response (201 Created):**
 ```json
 {
-  "userId": 123,
-  "fullName": "John Doe",
-  "email": "john@example.com"
+  "userId": 123
 }
 ```
 
 **Notes:**
 - Password is hashed using bcrypt before storage
-- Password is never returned in API responses
+- Response returns only the userId on successful creation
 - Email must be in valid email format
 
 **Error Responses:**

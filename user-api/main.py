@@ -38,6 +38,10 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class UserCreateResponse(BaseModel):
+    userId: int
+
+
 # Helper functions
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -50,7 +54,7 @@ async def health_check():
     return {"status": "healthy", "service": "user-management-api"}
 
 
-@app.post("/users", response_model=UserResponse, status_code=201)
+@app.post("/users", response_model=UserCreateResponse, status_code=201)
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     """Create a new user with encrypted password"""
     # Check if userId already exists
@@ -76,7 +80,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
-    return new_user
+    return {"userId": new_user.userId}
 
 
 @app.get("/users/{user_id}", response_model=UserResponse)
