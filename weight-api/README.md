@@ -4,9 +4,9 @@ FastAPI REST API service for weight tracking with full CRUD operations. Part of 
 
 ## Overview
 
-This service provides endpoints to manage weight records for users. It uses PostgreSQL for data persistence and supports operations like adding, retrieving, updating, and deleting weight records.
+This service provides endpoints to manage weight records for users. It uses PostgreSQL for data persistence and supports operations like adding, retrieving, updating, and deleting weight records. **All endpoints require JWT authentication.**
 
-**Note**: This service handles weight data operations only. User authentication is managed by the [User API](../user-api/README.md). In a typical workflow, users authenticate through the User API, and their `userId` is then used to interact with this service.
+**Note**: This service handles weight data operations only. User authentication is managed by the [User API](../user-api/README.md). In a typical workflow, users authenticate through the User API to receive a JWT token, which is then used to authorize requests to this service.
 
 ## Tech Stack
 
@@ -14,20 +14,30 @@ This service provides endpoints to manage weight records for users. It uses Post
 - **ORM**: SQLAlchemy 2.0.25
 - **Database**: PostgreSQL 15 (shared with User API)
 - **Validation**: Pydantic
+- **Authentication**: JWT (JSON Web Tokens) with python-jose
 - **Server**: Uvicorn
 
 ## API Endpoints
 
+**Note**: All endpoints require JWT authentication. Include the access token in the Authorization header:
+```
+Authorization: Bearer <access_token>
+```
+
 ### GET /weights
 
-Get weight records for a specific user.
+Get weight records for a specific user. **Requires authentication.**
+
+**Headers:**
+- `Authorization`: Bearer token (required)
 
 **Query Parameters:**
 - `userId` (required): Integer - User ID to filter records
 
 **Example Request:**
 ```bash
-curl "http://localhost:8000/weights?userId=123"
+curl "http://localhost:8000/weights?userId=123" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Response (200 OK):**
@@ -55,11 +65,28 @@ curl "http://localhost:8000/weights?userId=123"
 }
 ```
 
+**Error Response (401 Unauthorized):**
+```json
+{
+  "detail": "Invalid authentication credentials"
+}
+```
+
+**Error Response (403 Forbidden):**
+```json
+{
+  "detail": "Forbidden: Cannot access other users' data"
+}
+```
+
 ---
 
 ### POST /weights
 
-Add a new weight record. The timestamp and weightId are automatically generated.
+Add a new weight record. **Requires authentication.**
+
+**Headers:**
+- `Authorization`: Bearer token (required)
 
 **Request Body:**
 ```json
@@ -73,6 +100,7 @@ Add a new weight record. The timestamp and weightId are automatically generated.
 ```bash
 curl -X POST http://localhost:8000/weights \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{"weight": 150.5, "userId": 123}'
 ```
 
@@ -89,12 +117,16 @@ curl -X POST http://localhost:8000/weights \
 **Notes:**
 - `weightId` is auto-generated per user (starts from 1 for each new user)
 - `timestamp` is automatically set to current date/time
+- Users can only add weight records for themselves (userId must match JWT token)
 
 ---
 
 ### PUT /weights
 
-Update an existing weight record by userId and weightId.
+Update an existing weight record by userId and weightId. **Requires authentication.**
+
+**Headers:**
+- `Authorization`: Bearer token (required)
 
 **Query Parameters:**
 - `userId` (required): Integer - User ID
@@ -111,6 +143,7 @@ Update an existing weight record by userId and weightId.
 ```bash
 curl -X PUT "http://localhost:8000/weights?userId=123&weightId=1" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{"weight": 145.0}'
 ```
 
@@ -131,11 +164,21 @@ curl -X PUT "http://localhost:8000/weights?userId=123&weightId=1" \
 }
 ```
 
+**Error Response (403 Forbidden):**
+```json
+{
+  "detail": "Forbidden: Cannot update other users' data"
+}
+```
+
 ---
 
 ### DELETE /weights
 
-Delete a weight record by userId and weightId.
+Delete a weight record by userId and weightId. **Requires authentication.**
+
+**Headers:**
+- `Authorization`: Bearer token (required)
 
 **Query Parameters:**
 - `userId` (required): Integer - User ID
@@ -143,7 +186,8 @@ Delete a weight record by userId and weightId.
 
 **Example Request:**
 ```bash
-curl -X DELETE "http://localhost:8000/weights?userId=123&weightId=1"
+curl -X DELETE "http://localhost:8000/weights?userId=123&weightId=1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Response (200 OK):**
@@ -159,6 +203,13 @@ curl -X DELETE "http://localhost:8000/weights?userId=123&weightId=1"
 ```json
 {
   "detail": "Weight record not found"
+}
+```
+
+**Error Response (403 Forbidden):**
+```json
+{
+  "detail": "Forbidden: Cannot delete other users' data"
 }
 ```
 

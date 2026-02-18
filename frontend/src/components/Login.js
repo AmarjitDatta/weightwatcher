@@ -20,11 +20,12 @@ function Login({ setUser }) {
         password
       });
 
-      // Save user info
+      // Save user info and JWT token
       const userData = {
         userId: response.data.userId,
         fullName: response.data.fullName,
-        email: email
+        email: email,
+        access_token: response.data.access_token
       };
       
       setUser(userData);

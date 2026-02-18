@@ -41,16 +41,36 @@ function WeightTracker({ user, setUser }) {
   // Form states
   const [newWeight, setNewWeight] = useState('');
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    if (!user || !user.access_token) {
+      return {};
+    }
+    return {
+      headers: {
+        'Authorization': `Bearer ${user.access_token}`
+      }
+    };
+  };
+
   // Fetch weights for logged-in user
   const fetchWeights = async () => {
     try {
       const response = await axios.get(`${API_URL}/weights`, {
-        params: { userId: user.userId }
+        params: { userId: user.userId },
+        ...getAuthHeaders()
       });
       setWeights(response.data);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch weights');
+      if (err.response?.status === 401) {
+        // Token expired or invalid, redirect to login
+        setUser(null);
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to fetch weights');
+      }
       setWeights([]);
     }
   };
@@ -66,16 +86,26 @@ function WeightTracker({ user, setUser }) {
   const handleAddWeight = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}/weights`, {
-        userId: user.userId,
-        weight: parseFloat(newWeight)
-      });
+      const response = await axios.post(
+        `${API_URL}/weights`,
+        {
+          userId: user.userId,
+          weight: parseFloat(newWeight)
+        },
+        getAuthHeaders()
+      );
       setSuccess(`Weight added successfully! Weight ID: ${response.data.weightId}`);
       setNewWeight('');
       setError('');
       fetchWeights();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add weight');
+      if (err.response?.status === 401) {
+        setUser(null);
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to add weight');
+      }
     }
   };
 
@@ -97,13 +127,15 @@ function WeightTracker({ user, setUser }) {
   const handleUpdateWeight = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API_URL}/weights`, 
+      await axios.put(
+        `${API_URL}/weights`,
         { weight: parseFloat(editWeight.weight) },
         {
           params: {
             userId: user.userId,
             weightId: editWeight.weightId
-          }
+          },
+          ...getAuthHeaders()
         }
       );
       setSuccess('Weight updated successfully!');
@@ -113,7 +145,13 @@ function WeightTracker({ user, setUser }) {
       setSelectedRow(null);
       fetchWeights();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update weight');
+      if (err.response?.status === 401) {
+        setUser(null);
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to update weight');
+      }
     }
   };
 
@@ -127,13 +165,20 @@ function WeightTracker({ user, setUser }) {
         params: {
           userId: user.userId,
           weightId: weight.weightId
-        }
+        },
+        ...getAuthHeaders()
       });
       setSuccess('Weight deleted successfully!');
       setError('');
       fetchWeights();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to delete weight');
+      if (err.response?.status === 401) {
+        setUser(null);
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to delete weight');
+      }
     }
   };
 

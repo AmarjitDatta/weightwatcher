@@ -41,22 +41,23 @@ This application follows a **microservices architecture** with the following com
 - **Frontend**: React 18, React Router, Axios, Chart.js, CSS3, Nginx
 - **Backend**: FastAPI, SQLAlchemy, Pydantic
 - **Database**: PostgreSQL 15
-- **Security**: Passlib with Bcrypt (password hashing)
+- **Security**: JWT (JSON Web Tokens), Passlib with Bcrypt (password hashing)
 - **Deployment**: Docker, Docker Compose
 
 ## Features
 
+- ✅ **JWT Authentication** - Secure token-based authentication for all API endpoints
 - ✅ **User Authentication** - Secure login/register system with encrypted passwords
 - ✅ **Microservices Architecture** - Independent, scalable services
 - ✅ **Weight Tracking** - Full CRUD operations for weight records per user
 - ✅ **Visual Analytics** - Interactive time series line chart showing weight progress
 - ✅ **User Management** - Auto-generated user IDs with bcrypt password hashing
 - ✅ **React UI** - Modern single-page application with routing
-- ✅ **Session Persistence** - Users stay logged in via localStorage
+- ✅ **Session Persistence** - Users stay logged in via localStorage with JWT tokens
 - ✅ **Data Persistence** - PostgreSQL database with proper schema
 - ✅ **Dockerized** - All services run in containers
 - ✅ **API Documentation** - Auto-generated Swagger/ReDoc documentation
-- ✅ **Protected Routes** - Weight tracker accessible only after login
+- ✅ **Protected Routes** - Weight tracker and API endpoints secured with JWT
 
 ## Quick Start
 

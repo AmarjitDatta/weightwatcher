@@ -1,9 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 from database import UserDB, get_db
 
 app = FastAPI(title="User Management API")
@@ -16,6 +19,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# JWT Configuration
+SECRET_KEY = "your-secret-key-change-in-production-use-env-variable"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+
+# Security
+security = HTTPBearer()
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,6 +61,8 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     userId: int
     fullName: str
+    access_token: str
+    token_type: str = "bearer"
 
 
 # Helper functions
@@ -59,6 +72,39 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Create JWT access token"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify JWT token and return user_id"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user_id
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 # API Endpoints
@@ -105,7 +151,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=LoginResponse)
 async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
-    """Login with email and password"""
+    """Login with email and password, returns JWT token"""
     # Find user by email
     user = db.query(UserDB).filter(UserDB.email == credentials.email).first()
     
@@ -116,12 +162,22 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     if not verify_password(credentials.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    return {"userId": user.userId, "fullName": user.fullName}
+    # Create access token
+    access_token = create_access_token(
+        data={"sub": user.userId, "email": user.email}
+    )
+    
+    return {
+        "userId": user.userId,
+        "fullName": user.fullName,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @app.get("/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    """Get user by userId"""
+async def get_user(user_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_token)):
+    """Get user by userId (requires authentication)"""
     user = db.query(UserDB).filter(UserDB.userId == user_id).first()
     
     if not user:
@@ -131,7 +187,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/users", response_model=list[UserResponse])
-async def get_all_users(db: Session = Depends(get_db)):
-    """Get all users"""
+async def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(verify_token)):
+    """Get all users (requires authentication)"""
     users = db.query(UserDB).all()
     return users

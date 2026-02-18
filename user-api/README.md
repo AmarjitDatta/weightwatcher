@@ -4,7 +4,7 @@ FastAPI REST API service for user registration, authentication, and management. 
 
 ## Overview
 
-This service provides endpoints to register users, authenticate login credentials, and manage user accounts with secure password encryption. It uses PostgreSQL for data persistence and bcrypt for password hashing.
+This service provides endpoints to register users, authenticate login credentials, and manage user accounts with secure password encryption and JWT-based authentication. It uses PostgreSQL for data persistence, bcrypt for password hashing, and JWT for secure token-based authentication.
 
 ## Tech Stack
 
@@ -13,7 +13,7 @@ This service provides endpoints to register users, authenticate login credential
 - **Database**: PostgreSQL 15 (shared with Weight API)
 - **Validation**: Pydantic with EmailStr
 - **Password Hashing**: Passlib with bcrypt
-- **Authentication**: Email/password based
+- **Authentication**: JWT (JSON Web Tokens) with python-jose
 - **Server**: Uvicorn
 
 ## API Endpoints
@@ -82,7 +82,7 @@ curl -X POST http://localhost:8001/users \
 
 ### POST /login
 
-Authenticate a user with email and password.
+Authenticate a user with email and password. Returns a JWT access token for API authorization.
 
 **Request Body:**
 ```json
@@ -106,13 +106,17 @@ curl -X POST http://localhost:8001/login \
 ```json
 {
   "userId": 1000,
-  "fullName": "John Doe"
+  "fullName": "John Doe",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
 }
 ```
 
 **Notes:**
 - Password is verified against the hashed password in database
-- Returns userId and fullName on successful authentication
+- Returns JWT access token valid for 24 hours
+- Include the access token in Authorization header for protected endpoints
+- Token format: `Authorization: Bearer <access_token>`
 - Use the returned userId for subsequent weight tracking operations
 
 **Error Response (401 Unauthorized):**
@@ -126,14 +130,18 @@ curl -X POST http://localhost:8001/login \
 
 ### GET /users/{user_id}
 
-Get user details by userId.
+Get user details by userId. **Requires authentication.**
 
 **Path Parameters:**
 - `user_id`: Integer - User ID to retrieve
 
+**Headers:**
+- `Authorization`: Bearer token (required)
+
 **Example Request:**
 ```bash
-curl http://localhost:8001/users/123
+curl http://localhost:8001/users/123 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Response (200 OK):**
@@ -156,11 +164,15 @@ curl http://localhost:8001/users/123
 
 ### GET /users
 
-Get all users.
+Get all users. **Requires authentication.**
+
+**Headers:**
+- `Authorization`: Bearer token (required)
 
 **Example Request:**
 ```bash
-curl http://localhost:8001/users
+curl http://localhost:8001/users \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Response (200 OK):**
@@ -178,6 +190,40 @@ curl http://localhost:8001/users
   }
 ]
 ```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "detail": "Invalid authentication credentials"
+}
+```
+
+## Security
+
+### JWT Authentication
+
+This API uses JWT (JSON Web Tokens) for authentication:
+
+- **Token Generation**: Login endpoint returns an access token
+- **Token Expiration**: 24 hours (configurable)
+- **Algorithm**: HS256 (HMAC with SHA-256)
+- **Header Format**: `Authorization: Bearer <token>`
+
+**Protected Endpoints:**
+- `GET /users/{user_id}` - Requires valid JWT
+- `GET /users` - Requires valid JWT
+
+**Public Endpoints:**
+- `POST /users` - User registration (no auth required)
+- `POST /login` - User login (no auth required)
+- `GET /health` - Health check (no auth required)
+
+### Password Security
+
+- Passwords are hashed using bcrypt with salt
+- Plain text passwords are never stored
+- Password verification uses constant-time comparison
+- Minimum password length enforced by validation (6+ characters recommended)
 
 ## Database Schema
 

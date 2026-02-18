@@ -12,19 +12,21 @@ A modern, responsive web application that provides a complete user experience fo
 - **Routing**: React Router DOM 6
 - **HTTP Client**: Axios
 - **Charts**: Chart.js 4 with react-chartjs-2
+- **Authentication**: JWT (JSON Web Tokens)
 - **Styling**: CSS3 with responsive design
 - **Server**: Nginx (production)
 - **State Management**: React Hooks (useState, useEffect)
-- **Storage**: localStorage for session persistence
+- **Storage**: localStorage for session persistence with JWT tokens
 
 ## Features
 
 ### Authentication
 - ✅ **User Registration** - New user signup with validation
-- ✅ **User Login** - Email/password authentication
-- ✅ **Session Persistence** - Stay logged in across browser sessions
-- ✅ **Protected Routes** - Automatic redirect to login when not authenticated
-- ✅ **Logout** - Clear session and return to login
+- ✅ **JWT-Based Login** - Email/password authentication with JWT token
+- ✅ **Token Management** - Automatic token inclusion in API requests
+- ✅ **Session Persistence** - Stay logged in across browser sessions with secure tokens
+- ✅ **Protected Routes** - Automatic redirect to login when not authenticated or token expired
+- ✅ **Logout** - Clear session and token, return to login
 
 ### Weight Tracking
 - ✅ **View History** - See all weight entries in a table
@@ -45,9 +47,11 @@ A modern, responsive web application that provides a complete user experience fo
 
 ### Login Page (`/login`)
 - Email and password authentication
+- Receives JWT access token on successful login
 - Link to registration page
 - Error messages for invalid credentials
 - Auto-redirect to tracker on success
+- Token stored securely in localStorage
 
 ### Register Page (`/register`)
 - Full name, email, and password fields
@@ -176,14 +180,22 @@ Contains:
 {
   userId: 1000,
   fullName: "John Doe",
-  email: "john@example.com"
+  email: "john@example.com",
+  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
+**JWT Token Handling:**
+- Token received from `/login` endpoint
+- Stored in localStorage for persistence
+- Automatically included in Authorization header for all API requests
+- Token format: `Authorization: Bearer <access_token>`
+- Expired tokens trigger automatic logout and redirect to login
+
 ### Weight Data
-- Fetched from API on component mount
+- Fetched from API on component mount (with JWT in headers)
 - Refreshed after add/update/delete operations
-- Displayed in table with latest entries
+- Displayed in table and chart with latest entries
 
 ## Styling
 
@@ -196,9 +208,16 @@ Custom CSS with:
 
 ## Security
 
-- **Password Handling**: Never stored in frontend, only sent to API
-- **Session Storage**: Only userId, name, and email stored (no sensitive data)
-- **Protected Routes**: Redirect to login if not authenticated
+- **JWT Authentication**: Token-based authentication for all API requests
+  - 24-hour token expiration
+  - Automatic logout on token expiration (401 responses)
+  - Bearer token included in Authorization header
+- **Password Handling**: Never stored in frontend, only sent to API during login
+- **Session Storage**: User data and JWT token stored in localStorage
+  - Token allows API access without re-authentication
+  - Cleared on logout
+- **Protected Routes**: Redirect to login if not authenticated or token expired
+- **User Isolation**: Backend enforces users can only access their own data (403 Forbidden)
 - **CORS**: Configured in backend APIs
 
 ## Troubleshooting
