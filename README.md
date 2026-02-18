@@ -1,12 +1,19 @@
-# Weight Tracker API
+# Weight Tracker Application
 
-A REST API built with FastAPI and PostgreSQL to track weight data with timestamps.
+A full-stack weight tracking application with a FastAPI backend, PostgreSQL database, and React frontend.
+
+## Features
+
+- **Frontend**: React-based UI for managing weight records
+- **Backend**: FastAPI REST API with full CRUD operations
+- **Database**: PostgreSQL for persistent data storage
+- **Containerized**: All components run in Docker containers
 
 ## Running with Docker Compose (Recommended)
 
-This will run both the FastAPI application and PostgreSQL database in separate containers.
+This will run the FastAPI application, PostgreSQL database, and React frontend in separate containers.
 
-1. Start both containers:
+1. Start all containers:
 ```bash
 docker-compose up -d
 ```
@@ -31,7 +38,10 @@ docker-compose down
 docker-compose down -v
 ```
 
-The API will be available at `http://localhost:8000`
+**Access the application:**
+- **Frontend UI**: `http://localhost:3000`
+- **API**: `http://localhost:8000`
+- **API Documentation**: `http://localhost:8000/docs`
 
 ## Running Locally (Without Docker)
 
@@ -182,9 +192,22 @@ Status Code: 404
 
 ## Architecture
 
+- **Frontend Container**: React application running on port 3000 (Nginx)
 - **App Container**: FastAPI application running on port 8000
 - **Database Container**: PostgreSQL 15 running on port 5432
 - **Data Persistence**: PostgreSQL data is stored in a Docker volume
+
+## Frontend UI
+
+The React frontend provides an intuitive interface to interact with the API:
+
+**Features:**
+- **View Records**: Enter a User ID to load and display all weight records in a table
+- **Add Weight**: Form to add new weight entries for any user
+- **Update Weight**: Form to update existing weight records by userId and weightId
+- **Delete Record**: Select a row from the table and delete it with confirmation
+
+The frontend automatically communicates with the backend API and provides real-time feedback for all operations.
 
 ## Database Schema
 
