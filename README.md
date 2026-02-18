@@ -2,12 +2,34 @@
 
 A full-stack weight tracking application with a FastAPI backend, PostgreSQL database, and React frontend.
 
+## Tech Stack
+
+- **Frontend**: React 18, Axios, CSS3
+- **Backend**: FastAPI, SQLAlchemy, Pydantic
+- **Database**: PostgreSQL 15
+- **Deployment**: Docker, Docker Compose, Nginx
+
 ## Features
 
 - **Frontend**: React-based UI for managing weight records
 - **Backend**: FastAPI REST API with full CRUD operations
 - **Database**: PostgreSQL for persistent data storage
 - **Containerized**: All components run in Docker containers
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/AmarjitDatta/weightwatcher.git
+cd weightwatcher
+
+# Start all services
+docker-compose up -d
+
+# Access the application
+# Frontend: http://localhost:3000
+# API Docs: http://localhost:8000/docs
+```
 
 ## Running with Docker Compose (Recommended)
 
@@ -45,6 +67,8 @@ docker-compose down -v
 
 ## Running Locally (Without Docker)
 
+### Backend
+
 1. Install and start PostgreSQL locally
 
 2. Set the DATABASE_URL environment variable:
@@ -63,6 +87,30 @@ uvicorn main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
+
+### Frontend
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set the API URL (optional - defaults to localhost:8000):
+```bash
+export REACT_APP_API_URL=http://localhost:8000
+```
+
+4. Start the development server:
+```bash
+npm start
+```
+
+The frontend will be available at `http://localhost:3000`
 
 ## API Endpoints
 
@@ -225,3 +273,40 @@ The frontend automatically communicates with the backend API and provides real-t
 Once the server is running, you can access:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+## Troubleshooting
+
+**Frontend can't connect to API:**
+- Ensure all containers are running: `docker-compose ps`
+- Check API logs: `docker-compose logs app`
+- Verify CORS is enabled in `main.py`
+
+**Database connection errors:**
+- Ensure database container is healthy: `docker-compose ps`
+- Check database logs: `docker-compose logs db`
+- Restart all services: `docker-compose restart`
+
+**Port already in use:**
+- Stop existing containers: `docker-compose down`
+- Check for processes using ports 3000, 8000, or 5432
+- Modify port mappings in `docker-compose.yml` if needed
+
+**Build errors:**
+- Clear Docker cache: `docker-compose build --no-cache`
+- Remove old images: `docker system prune -a`
+
+## Development
+
+To rebuild and restart after code changes:
+```bash
+docker-compose up -d --build
+```
+
+To view real-time logs:
+```bash
+docker-compose logs -f
+```
+
+## Repository
+
+GitHub: https://github.com/AmarjitDatta/weightwatcher
