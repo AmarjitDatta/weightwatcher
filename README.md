@@ -1,38 +1,6 @@
-# Names API
+# Weight Tracker API
 
-A simple REST API built with FastAPI to manage a list of names.
-
-## Running with Docker (Recommended)
-
-1. Build the Docker image:
-```bash
-docker build -t names-api .
-```
-
-2. Run the container:
-```bash
-docker run -p 8000:8000 names-api
-```
-
-The API will be available at `http://localhost:8000`
-
-## Running Locally (Without Docker)
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Start the server:
-```bash
-uvicorn main:app --reload
-```
-
-The API will be available at `http://localhost:8000`
-
-# Weight Tracking API
-
-A simple REST API built with FastAPI to track weight data with timestamps, using PostgreSQL database.
+A REST API built with FastAPI and PostgreSQL to track weight data with timestamps.
 
 ## Running with Docker Compose (Recommended)
 
