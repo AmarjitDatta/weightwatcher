@@ -38,7 +38,7 @@ This application follows a **microservices architecture** with the following com
 
 ## Tech Stack
 
-- **Frontend**: React 18, React Router, Axios, CSS3, Nginx
+- **Frontend**: React 18, React Router, Axios, Chart.js, CSS3, Nginx
 - **Backend**: FastAPI, SQLAlchemy, Pydantic
 - **Database**: PostgreSQL 15
 - **Security**: Passlib with Bcrypt (password hashing)
@@ -49,6 +49,7 @@ This application follows a **microservices architecture** with the following com
 - ✅ **User Authentication** - Secure login/register system with encrypted passwords
 - ✅ **Microservices Architecture** - Independent, scalable services
 - ✅ **Weight Tracking** - Full CRUD operations for weight records per user
+- ✅ **Visual Analytics** - Interactive time series line chart showing weight progress
 - ✅ **User Management** - Auto-generated user IDs with bcrypt password hashing
 - ✅ **React UI** - Modern single-page application with routing
 - ✅ **Session Persistence** - Users stay logged in via localStorage

@@ -11,6 +11,7 @@ A modern, responsive web application that provides a complete user experience fo
 - **Framework**: React 18
 - **Routing**: React Router DOM 6
 - **HTTP Client**: Axios
+- **Charts**: Chart.js 4 with react-chartjs-2
 - **Styling**: CSS3 with responsive design
 - **Server**: Nginx (production)
 - **State Management**: React Hooks (useState, useEffect)
@@ -27,10 +28,11 @@ A modern, responsive web application that provides a complete user experience fo
 
 ### Weight Tracking
 - ✅ **View History** - See all weight entries in a table
+- ✅ **Progress Chart** - Interactive time series line chart visualizing weight over time
 - ✅ **Add Entry** - Quick form to add new weight
 - ✅ **Inline Edit** - Edit entries directly in the table
 - ✅ **Delete Entry** - Remove entries with confirmation
-- ✅ **Auto-Refresh** - List updates automatically after changes
+- ✅ **Auto-Refresh** - List and chart update automatically after changes
 - ✅ **Real-time Feedback** - Success/error messages for all actions
 
 ### User Experience
@@ -57,6 +59,12 @@ A modern, responsive web application that provides a complete user experience fo
 - Protected route (login required)
 - Welcome message with user's name
 - Add new weight entry form
+- **Interactive time series chart** - Visual representation of weight progress over time
+  - Date-based X-axis with automatic formatting
+  - Weight (lb) on Y-axis with auto-scaling
+  - Smooth line connecting data points
+  - Hover tooltips showing exact values
+  - Responsive design that adapts to screen size
 - Weight history table with inline editing
 - Edit and delete actions for each entry
 - Logout button

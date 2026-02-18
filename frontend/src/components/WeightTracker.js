@@ -1,6 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  TimeScale
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-date-fns';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  TimeScale
+);
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -127,6 +152,69 @@ function WeightTracker({ user, setUser }) {
     }
   }, [success]);
 
+  // Prepare chart data
+  const chartData = {
+    labels: weights.map(w => new Date(w.timestamp)),
+    datasets: [
+      {
+        label: 'Weight (lb)',
+        data: weights.map(w => w.weight),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.3,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio: 2,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Weight Progress Over Time',
+        font: {
+          size: 18
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `Weight: ${context.parsed.y} lb`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'day',
+          displayFormats: {
+            day: 'MMM d, yyyy'
+          }
+        },
+        title: {
+          display: true,
+          text: 'Date'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Weight (lb)'
+        },
+        beginAtZero: false
+      }
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -163,6 +251,15 @@ function WeightTracker({ user, setUser }) {
             <button type="submit" className="btn btn-success">Add Weight</button>
           </form>
         </div>
+
+        {/* Weight Progress Chart */}
+        {weights.length > 0 && (
+          <div className="section">
+            <div className="chart-container">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          </div>
+        )}
 
         {/* Weights History */}
         <div className="section">
