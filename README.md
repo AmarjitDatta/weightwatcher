@@ -1,20 +1,59 @@
 # Weight Tracker Application
 
-A full-stack weight tracking application with a FastAPI backend, PostgreSQL database, and React frontend.
+A full-stack weight tracking application built with microservices architecture, featuring separate FastAPI services for weight tracking and user management, PostgreSQL database, and a React frontend.
+
+## Architecture
+
+This application follows a **microservices architecture** with the following components:
+
+```
+┌─────────────────┐
+│  React Frontend │  (Port 3000)
+│     (Nginx)     │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+┌───▼──────┐ ┌▼────────────┐
+│ Weight   │ │   User      │
+│   API    │ │    API      │
+│ (Port    │ │  (Port      │
+│  8000)   │ │   8001)     │
+└────┬─────┘ └─────┬───────┘
+     │             │
+     └──────┬──────┘
+            │
+     ┌──────▼──────┐
+     │ PostgreSQL  │  (Port 5432)
+     │  Database   │
+     └─────────────┘
+```
+
+## Components
+
+- **[Weight API](weight-api/)** - REST API for weight tracking (CRUD operations)
+- **[User API](user-api/)** - REST API for user management with password encryption
+- **Frontend** - React UI for managing weight records
+- **Database** - PostgreSQL 15 (shared by both APIs)
 
 ## Tech Stack
 
-- **Frontend**: React 18, Axios, CSS3
+- **Frontend**: React 18, Axios, CSS3, Nginx
 - **Backend**: FastAPI, SQLAlchemy, Pydantic
 - **Database**: PostgreSQL 15
-- **Deployment**: Docker, Docker Compose, Nginx
+- **Security**: Passlib with Bcrypt (password hashing)
+- **Deployment**: Docker, Docker Compose
 
 ## Features
 
-- **Frontend**: React-based UI for managing weight records
-- **Backend**: FastAPI REST API with full CRUD operations
-- **Database**: PostgreSQL for persistent data storage
-- **Containerized**: All components run in Docker containers
+- ✅ **Microservices Architecture** - Independent, scalable services
+- ✅ **Weight Tracking** - Full CRUD operations for weight records
+- ✅ **User Management** - Secure user creation with encrypted passwords
+- ✅ **React UI** - Intuitive frontend interface
+- ✅ **Data Persistence** - PostgreSQL database with proper schema
+- ✅ **Dockerized** - All services run in containers
+- ✅ **API Documentation** - Auto-generated Swagger/ReDoc documentation
+- ✅ **Per-User Weight IDs** - Each user has their own weight sequence
 
 ## Quick Start
 
@@ -28,7 +67,8 @@ docker-compose up -d
 
 # Access the application
 # Frontend: http://localhost:3000
-# API Docs: http://localhost:8000/docs
+# Weight API Docs: http://localhost:8000/docs
+# User API Docs: http://localhost:8001/docs
 ```
 
 ## Running with Docker Compose (Recommended)
@@ -62,8 +102,38 @@ docker-compose down -v
 
 **Access the application:**
 - **Frontend UI**: `http://localhost:3000`
-- **API**: `http://localhost:8000`
-- **API Documentation**: `http://localhost:8000/docs`
+- **Weight API**: `http://localhost:8000`
+- **Weight API Documentation**: `http://localhost:8000/docs`
+- **User API**: `http://localhost:8001`
+- **User API Documentation**: `http://localhost:8001/docs`
+
+## Service Documentation
+
+Each microservice has its own detailed documentation:
+
+- **[Weight API Documentation](weight-api/README.md)** - Weight tracking endpoints, database schema, testing
+- **[User API Documentation](user-api/README.md)** - User management endpoints, security, authentication
+
+## API Overview
+
+### Weight Tracking API (Port 8000)
+
+Manages weight records with full CRUD operations:
+- `GET /weights?userId={id}` - Get all weight records for a user
+- `POST /weights` - Add new weight record
+- `PUT /weights?userId={id}&weightId={id}` - Update weight record
+- `DELETE /weights?userId={id}&weightId={id}` - Delete weight record
+
+📖 **[Full Weight API Documentation →](weight-api/README.md)**
+
+### User Management API (Port 8001)
+
+Handles user accounts with secure password encryption:
+- `POST /users` - Create new user with encrypted password
+- `GET /users/{user_id}` - Get user by ID
+- `GET /users` - Get all users
+
+📖 **[Full User API Documentation →](user-api/README.md)**
 
 ## Running Locally (Without Docker)
 
@@ -112,139 +182,6 @@ npm start
 
 The frontend will be available at `http://localhost:3000`
 
-## API Endpoints
-
-### GET /weights
-Get weight records for a specific user from the PostgreSQL database.
-
-**Query Parameters:**
-- `userId` (required): Integer - User ID to filter records
-
-**Example Request:**
-```
-GET http://localhost:8000/weights?userId=123
-```
-
-**Response:**
-```json
-[
-  {
-    "weightId": 1,
-    "weight": 150.5,
-    "userId": 123,
-    "timestamp": "2026-02-18T10:30:45.123456"
-  },
-  {
-    "weightId": 2,
-    "weight": 149.2,
-    "userId": 123,
-    "timestamp": "2026-02-18T11:15:22.654321"
-  }
-]
-```
-
-**Error Response (missing userId):**
-```json
-{
-  "detail": "Bad Request: userId is required"
-}
-```
-Status Code: 400
-
-### POST /weights
-Add a new weight record to the PostgreSQL database. The timestamp and weightId are automatically generated per user.
-
-**Request Body:**
-```json
-{
-  "weight": 150.5,
-  "userId": 123
-}
-```
-
-**Response:**
-```json
-{
-  "weightId": 1,
-  "weight": 150.5,
-  "userId": 123,
-  "timestamp": "2026-02-18T10:30:45.123456"
-}
-```
-
-### PUT /weights
-Update an existing weight record by userId and weightId. The timestamp is automatically updated.
-
-**Query Parameters:**
-- `userId` (required): Integer - User ID
-- `weightId` (required): Integer - Weight ID for the user
-
-**Request Body:**
-```json
-{
-  "weight": 145.0
-}
-```
-
-**Example Request:**
-```
-PUT http://localhost:8000/weights?userId=123&weightId=1
-```
-
-**Response:**
-```json
-{
-  "weightId": 1,
-  "weight": 145.0,
-  "userId": 123,
-  "timestamp": "2026-02-18T12:00:00.000000"
-}
-```
-
-**Error Response (record not found):**
-```json
-{
-  "detail": "Weight record not found"
-}
-```
-Status Code: 404
-
-### DELETE /weights
-Delete a weight record by userId and weightId.
-
-**Query Parameters:**
-- `userId` (required): Integer - User ID
-- `weightId` (required): Integer - Weight ID for the user
-
-**Example Request:**
-```
-DELETE http://localhost:8000/weights?userId=123&weightId=1
-```
-
-**Response:**
-```json
-{
-  "message": "Weight record deleted successfully",
-  "userId": 123,
-  "weightId": 1
-}
-```
-
-**Error Response (record not found):**
-```json
-{
-  "detail": "Weight record not found"
-}
-```
-Status Code: 404
-
-## Architecture
-
-- **Frontend Container**: React application running on port 3000 (Nginx)
-- **App Container**: FastAPI application running on port 8000
-- **Database Container**: PostgreSQL 15 running on port 5432
-- **Data Persistence**: PostgreSQL data is stored in a Docker volume
-
 ## Frontend UI
 
 The React frontend provides an intuitive interface to interact with the API:
@@ -259,6 +196,13 @@ The frontend automatically communicates with the backend API and provides real-t
 
 ## Database Schema
 
+**Table: users**
+- `id`: Primary key (auto-increment)
+- `userId`: Integer (unique, indexed, not null)
+- `fullName`: String (255 chars, not null)
+- `email`: String (255 chars, unique, indexed, not null)
+- `password`: String (255 chars, not null) - Stores hashed password using bcrypt
+
 **Table: weights**
 - `id`: Primary key (auto-increment)
 - `weightId`: Integer (auto-generated per user, indexed)
@@ -270,16 +214,23 @@ The frontend automatically communicates with the backend API and provides real-t
 
 ## Interactive API Documentation
 
-Once the server is running, you can access:
+Once the servers are running, you can access:
+
+**Weight Tracking API:**
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+**User Management API:**
+- Swagger UI: `http://localhost:8001/docs`
+- ReDoc: `http://localhost:8001/redoc`
 
 ## Troubleshooting
 
 **Frontend can't connect to API:**
 - Ensure all containers are running: `docker-compose ps`
-- Check API logs: `docker-compose logs app`
-- Verify CORS is enabled in `main.py`
+- Check Weight API logs: `docker-compose logs weight-api`
+- Check User API logs: `docker-compose logs user-api`
+- Verify CORS is enabled in both API `main.py` files
 
 **Database connection errors:**
 - Ensure database container is healthy: `docker-compose ps`

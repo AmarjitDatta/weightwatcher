@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, Float, DateTime
+from sqlalchemy import create_engine, Column, Integer, Float, DateTime, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
@@ -12,7 +12,18 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# Database model
+# User model
+class UserDB(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    userId = Column(Integer, unique=True, index=True, nullable=False)
+    fullName = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password = Column(String(255), nullable=False)  # Stores hashed password
+
+
+# Weight model
 class WeightDB(Base):
     __tablename__ = "weights"
     

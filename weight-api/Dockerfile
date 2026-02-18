@@ -3,14 +3,14 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy requirements file
-COPY requirements.txt .
+COPY weight-api/requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY main.py .
 COPY database.py .
+COPY weight-api/main.py .
 
 # Expose port 8000
 EXPOSE 8000
